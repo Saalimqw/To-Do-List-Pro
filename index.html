@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do List Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            min-height: 100vh;
+            background: #FFF9C4;
+            background-image: radial-gradient(circle at 20% 80%, #FFE0B2 0%, transparent 50%), radial-gradient(circle at 80% 20%, #B3E5FC 0%, transparent 50%), radial-gradient(circle at 50% 50%, #F8BBD9 0%, transparent 50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            min-height: 90vh;
+            background: #FFFFFF;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 36px; font-weight: 700; color: #FF6B6B; }
+
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; background: #F5F5F5; padding: 8px; flex-wrap: wrap; }
+
+        .tab-btn { flex: 1; min-width: 90px; padding: 14px 12px; border: none; background: transparent; border-radius: 12px; font-size: 16px; font-weight: 600; font-family: 'Nunito', sans-serif; cursor: pointer; color: #636E72; transition: all 0.2s; }
+
+        .tab-btn.active { background: #FF6B6B; color: white; box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4); }
+        .tab-btn:hover:not(.active) { background: #E0E0E0; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .input-section { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+
+        .input-section input[type="text"] { flex: 1; min-width: 150px; padding: 16px 20px; border: 2px solid #E0E0E0; border-radius: 14px; font-size: 18px; font-family: 'Nunito', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+
+        .input-section input:focus { border-color: #4ECDC4; box-shadow: 0 0 0 4px rgba(78, 205, 196, 0.2); }
+
+        .input-section input[type="datetime-local"], .input-section input[type="time"] { padding: 14px 16px; border: 2px solid #E0E0E0; border-radius: 14px; font-size: 14px; font-family: 'Nunito', sans-serif; outline: none; cursor: pointer; }
+
+        .input-section input[type="datetime-local"]:focus, .input-section input[type="time"]:focus { border-color: #FF6B6B; box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.2); }
+
+        .add-btn { padding: 16px 28px; background: #FF6B6B; color: white; border: none; border-radius: 14px; font-size: 20px; font-weight: 600; font-family: 'Nunito', sans-serif; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+
+        .add-btn:hover { background: #FF5252; transform: scale(1.05); }
+        .add-btn:active { transform: scale(0.95); }
+
+        .task-list, .reminder-list, .alarm-list { display: flex; flex-direction: column; gap: 10px; max-height: 800px; overflow-y: auto; }
+
+        .task-item, .reminder-item, .alarm-item { display: flex; align-items: center; gap: 12px; padding: 16px 18px; background: #F5F5F5; border-radius: 14px; transition: background 0.2s; animation: slideIn 0.3s ease; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .task-item:hover, .reminder-item:hover, .alarm-item:hover { background: #EEEEEE; }
+        .task-item.completed, .reminder-item.completed { background: #A8E6CF; }
+        .task-item.completed .task-text, .reminder-item.completed .reminder-text { text-decoration: line-through; color: #636E72; }
+
+        .checkbox { width: 24px; height: 24px; border: 3px solid #4ECDC4; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, border-color 0.2s; flex-shrink: 0; }
+
+        .checkbox:hover { border-color: #3DBDB4; }
+        .checkbox.checked { background: #4ECDC4; border-color: #4ECDC4; }
+        .checkbox.checked::after { content: '✓'; color: white; font-weight: bold; font-size: 14px; }
+
+        .task-text, .reminder-text, .alarm-text { flex: 1; font-size: 16px; color: #2D3436; word-break: break-word; }
+
+        .reminder-time, .alarm-time { font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .reminder-time { color: #FF6B6B; }
+        .alarm-time { color: #4ECDC4; }
+
+        .alarm-toggle { width: 44px; height: 24px; background: #E0E0E0; border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+        .alarm-toggle.on { background: #4ECDC4; }
+        .alarm-toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
+        .alarm-toggle.on::after { transform: translateX(20px); }
+
+        .delete-btn { width: 32px; height: 32px; background: #FF6B6B; color: white; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; opacity: 0; transition: opacity 0.2s, transform 0.2s, background 0.2s; display: flex; align-items: center; justify-content: center; }
+        .task-item:hover .delete-btn, .reminder-item:hover .delete-btn, .alarm-item:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { background: #FF5252; transform: scale(1.1); }
+
+        .empty-state { text-align: center; padding: 30px 20px; color: #636E72; }
+        .empty-state .emoji { font-size: 40px; margin-bottom: 10px; }
+        .empty-state p { font-size: 15px; }
+
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .calendar-header button { width: 34px; height: 34px; border: none; background: #F5F5F5; border-radius: 8px; font-size: 18px; cursor: pointer; }
+        .calendar-header button:hover { background: #E0E0E0; }
+        .calendar-header span { font-size: 16px; font-weight: 700; color: #2D3436; }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
+        .calendar-day-header { font-size: 11px; font-weight: 600; color: #636E72; padding: 6px 0; }
+
+        .calendar-day { padding: 8px 3px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+        .calendar-day:hover { background: #E8F5E9; }
+        .calendar-day.today { background: #4ECDC4; color: white; font-weight: 700; }
+        .calendar-day.has-task { background: #FFE0B2; }
+        .calendar-day.selected { background: #FF6B6B; color: white; }
+        .calendar-day.other-month { color: #BDBDBD; }
+
+        .world-clock-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 18px; max-height: 700px; overflow-y: auto; }
+
+        .world-clock-item { background: #F5F5F5; border-radius: 14px; padding: 24px; text-align: center; position: relative; }
+        .world-clock-item .city { font-size: 16px; color: #636E72; font-weight: 600; }
+        .world-clock-item .time { font-size: 32px; font-weight: 700; color: #2D3436; margin-top: 8px; }
+        .world-clock-item .date { font-size: 14px; color: #636E72; margin-top: 6px; }
+
+        .add-clock-section { display: flex; gap: 10px; margin-bottom: 18px; }
+
+        .add-clock-section input { flex: 1; padding: 14px 16px; border: 2px solid #E0E0E0; border-radius: 14px; font-size: 16px; font-family: 'Nunito', sans-serif; outline: none; }
+        .add-clock-section input:focus { border-color: #4ECDC4; }
+
+        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #F5F5F5; border-radius: 14px; margin-bottom: 12px; }
+        .setting-item label { font-size: 15px; font-weight: 600; color: #2D3436; }
+        .setting-item select { padding: 10px 14px; border: 2px solid #E0E0E0; border-radius: 10px; font-size: 14px; font-family: 'Nunito', sans-serif; background: white; cursor: pointer; }
+        .sound-preview-btn { padding: 10px 18px; background: #4ECDC4; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; margin-left: 8px; }
+        .sound-preview-btn:hover { background: #3DBDB4; }
+
+        .notification { position: fixed; top: 20px; right: 20px; background: #FF6B6B; color: white; padding: 18px 26px; border-radius: 14px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); font-weight: 600; z-index: 1000; animation: slideInRight 0.3s ease; max-width: 320px; }
+
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+        .notification.reminder { background: #4ECDC4; }
+        .notification.alarm { background: linear-gradient(135deg, #FF6B6B, #FF8E53); animation: slideInRight 0.3s ease, shake 0.5s infinite; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+        .snooze-btn { margin-top: 10px; padding: 10px 18px; background: white; color: #FF6B6B; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+        @media (max-width: 800px) { .container { padding: 16px; max-width: 100%; } .header h1 { font-size: 26px; } .tabs { gap: 4px; } .tab-btn { padding: 10px 8px; font-size: 13px; } .input-section { flex-direction: column; } .add-btn { width: 100%; } .delete-btn { opacity: 1; } .world-clock-grid { grid-template-columns: repeat(3, 1fr); } .input-section input[type="text"] { font-size: 16px; padding: 14px 16px; } .add-btn { font-size: 18px; padding: 14px 24px; } }
+        @media (max-width: 500px) { .container { padding: 14px; } .header h1 { font-size: 22px; } .tabs { gap: 4px; } .tab-btn { padding: 8px 6px; font-size: 12px; min-width: 60px; } .world-clock-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>✨ To Do List Pro</h1></div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tasks">Tasks</button>
+            <button class="tab-btn" data-tab="calendar">Calendar</button>
+            <button class="tab-btn" data-tab="reminders">Reminders</button>
+            <button class="tab-btn" data-tab="alarms">Alarms</button>
+            <button class="tab-btn" data-tab="worldclock">World Clock</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+        </div>
+
+        <div class="tab-content active" id="tasks">
+            <div class="input-section">
+                <input type="text" id="taskInput" placeholder="Add a new task...">
+                <button class="add-btn" id="addBtn">+</button>
+            </div>
+            <div class="task-list" id="taskList"></div>
+        </div>
+
+        <div class="tab-content" id="calendar">
+            <div class="calendar-header">
+                <button id="prevMonth">‹</button>
+                <span id="calendarTitle"></span>
+                <button id="nextMonth">›</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+
+        <div class="tab-content" id="reminders">
+            <div class="input-section">
+                <input type="text" id="reminderInput" placeholder="Add a reminder...">
+                <input type="datetime-local" id="reminderDate">
+                <button class="add-btn" id="addReminderBtn">+</button>
+            </div>
+            <div class="reminder-list" id="reminderList"></div>
+        </div>
+
+        <div class="tab-content" id="alarms">
+            <div class="input-section">
+                <input type="text" id="alarmInput" placeholder="Alarm label...">
+                <input type="time" id="alarmTime">
+                <button class="add-btn" id="addAlarmBtn">+</button>
+            </div>
+            <div class="alarm-list" id="alarmList"></div>
+        </div>
+
+        <div class="tab-content" id="worldclock">
+            <div class="add-clock-section">
+                <input type="text" id="timezoneSearch" placeholder="Search city..." list="timezoneList" autocomplete="off">
+                <datalist id="timezoneList">
+                    <option value="America/New_York">New York, USA</option>
+                    <option value="America/Los_Angeles">Los Angeles, USA</option>
+                    <option value="America/Chicago">Chicago, USA</option>
+                    <option value="America/Houston">Houston, USA</option>
+                    <option value="America/Phoenix">Phoenix, USA</option>
+                    <option value="America/Philadelphia">Philadelphia, USA</option>
+                    <option value="America/San_Antonio">San Antonio, USA</option>
+                    <option value="America/San_Diego">San Diego, USA</option>
+                    <option value="America/Dallas">Dallas, USA</option>
+                    <option value="America/San_Jose">San Jose, USA</option>
+                    <option value="America/Austin">Austin, USA</option>
+                    <option value="America/Seattle">Seattle, USA</option>
+                    <option value="America/Denver">Denver, USA</option>
+                    <option value="America/Boston">Boston, USA</option>
+                    <option value="America/Miami">Miami, USA</option>
+                    <option value="America/Atlanta">Atlanta, USA</option>
+                    <option value="America/Las_Vegas">Las Vegas, USA</option>
+                    <option value="America/Portland">Portland, USA</option>
+                    <option value="America/Detroit">Detroit, USA</option>
+                    <option value="America/Minneapolis">Minneapolis, USA</option>
+                    <option value="America/New_Orleans">New Orleans, USA</option>
+                    <option value="America/San_Francisco">San Francisco, USA</option>
+                    <option value="America/Honolulu">Honolulu, USA</option>
+                    <option value="America/Anchorage">Anchorage, USA</option>
+                    <option value="America/Toronto">Toronto, Canada</option>
+                    <option value="America/Vancouver">Vancouver, Canada</option>
+                    <option value="America/Montreal">Montreal, Canada</option>
+                    <option value="America/Calgary">Calgary, Canada</option>
+                    <option value="America/Mexico_City">Mexico City, Mexico</option>
+                    <option value="America/Guadalajara">Guadalajara, Mexico</option>
+                    <option value="America/Monterrey">Monterrey, Mexico</option>
+                    <option value="Asia/Kolkata">Kolkata, India</option>
+                    <option value="Asia/Delhi">Delhi, India</option>
+                    <option value="Asia/Mumbai">Mumbai, India</option>
+                    <option value="Asia/Bangalore">Bangalore, India</option>
+                    <option value="Asia/Chennai">Chennai, India</option>
+                    <option value="Asia/Hyderabad">Hyderabad, India</option>
+                    <option value="Asia/Pune">Pune, India</option>
+                    <option value="Asia/Jaipur">Jaipur, India</option>
+                    <option value="Asia/Surat">Surat, India</option>
+                    <option value="Asia/Lucknow">Lucknow, India</option>
+                    <option value="Asia/Kanpur">Kanpur, India</option>
+                    <option value="Asia/Nagpur">Nagpur, India</option>
+                    <option value="Asia/Indore">Indore, India</option>
+                    <option value="Asia/Kochi">Kochi, India</option>
+                    <option value="Asia/Chandigarh">Chandigarh, India</option>
+                    <option value="Asia/Bhopal">Bhopal, India</option>
+                    <option value="Asia/Vadodara">Vadodara, India</option>
+                    <option value="Asia/Ahmedabad">Ahmedabad, India</option>
+                    <option value="Asia/Varanasi">Varanasi, India</option>
+                    <option value="Asia/Guwahati">Guwahati, India</option>
+                    <option value="Asia/Riyadh">Riyadh, Saudi Arabia</option>
+                    <option value="Asia/Jeddah">Jeddah, Saudi Arabia</option>
+                    <option value="Asia/Mecca">Mecca, Saudi Arabia</option>
+                    <option value="Asia/Medina">Medina, Saudi Arabia</option>
+                    <option value="Asia/Dammam">Dammam, Saudi Arabia</option>
+                    <option value="Asia/Tabuk">Tabuk, Saudi Arabia</option>
+                    <option value="Asia/Jubail">Jubail, Saudi Arabia</option>
+                    <option value="Asia/Abha">Abha, Saudi Arabia</option>
+                    <option value="Asia/Karachi">Karachi, Pakistan</option>
+                    <option value="Asia/Lahore">Lahore, Pakistan</option>
+                    <option value="Asia/Islamabad">Islamabad, Pakistan</option>
+                    <option value="Asia/Faisalabad">Faisalabad, Pakistan</option>
+                    <option value="Asia/Rawalpindi">Rawalpindi, Pakistan</option>
+                    <option value="Asia/Multan">Multan, Pakistan</option>
+                    <option value="Asia/Peshawar">Peshawar, Pakistan</option>
+                    <option value="Asia/Quetta">Quetta, Pakistan</option>
+                    <option value="Asia/Dhaka">Dhaka, Bangladesh</option>
+                    <option value="Asia/Chittagong">Chittagong, Bangladesh</option>
+                    <option value="Asia/Khulna">Khulna, Bangladesh</option>
+                    <option value="Asia/Colombo">Colombo, Sri Lanka</option>
+                    <option value="Asia/Kandy">Kandy, Sri Lanka</option>
+                    <option value="Asia/Kathmandu">Kathmandu, Nepal</option>
+                    <option value="Asia/Kabul">Kabul, Afghanistan</option>
+                    <option value="Asia/Dubai">Dubai, UAE</option>
+                    <option value="Asia/Abu_Dhabi">Abu Dhabi, UAE</option>
+                    <option value="Asia/Sharjah">Sharjah, UAE</option>
+                    <option value="Asia/Doha">Doha, Qatar</option>
+                    <option value="Asia/Kuwait_City">Kuwait City, Kuwait</option>
+                    <option value="Asia/Bahrain">Manama, Bahrain</option>
+                    <option value="Asia/Muscat">Muscat, Oman</option>
+                    <option value="Asia/Tehran">Tehran, Iran</option>
+                    <option value="Asia/Baghdad">Baghdad, Iraq</option>
+                    <option value="Asia/Damascus">Damascus, Syria</option>
+                    <option value="Asia/Amman">Amman, Jordan</option>
+                    <option value="Asia/Beirut">Beirut, Lebanon</option>
+                    <option value="Asia/Jerusalem">Jerusalem, Israel</option>
+                    <option value="Europe/London">London, UK</option>
+                    <option value="Europe/Manchester">Manchester, UK</option>
+                    <option value="Europe/Birmingham">Birmingham, UK</option>
+                    <option value="Europe/Paris">Paris, France</option>
+                    <option value="Europe/Marseille">Marseille, France</option>
+                    <option value="Europe/Lyon">Lyon, France</option>
+                    <option value="Europe/Berlin">Berlin, Germany</option>
+                    <option value="Europe/Munich">Munich, Germany</option>
+                    <option value="Europe/Hamburg">Hamburg, Germany</option>
+                    <option value="Europe/Frankfurt">Frankfurt, Germany</option>
+                    <option value="Europe/Rome">Rome, Italy</option>
+                    <option value="Europe/Milan">Milan, Italy</option>
+                    <option value="Europe/Naples">Naples, Italy</option>
+                    <option value="Europe/Madrid">Madrid, Spain</option>
+                    <option value="Europe/Barcelona">Barcelona, Spain</option>
+                    <option value="Europe/Moscow">Moscow, Russia</option>
+                    <option value="Europe/Saint_Petersburg">Saint Petersburg, Russia</option>
+                    <option value="Europe/Amsterdam">Amsterdam, Netherlands</option>
+                    <option value="Europe/Brussels">Brussels, Belgium</option>
+                    <option value="Europe/Vienna">Vienna, Austria</option>
+                    <option value="Europe/Zurich">Zurich, Switzerland</option>
+                    <option value="Europe/Stockholm">Stockholm, Sweden</option>
+                    <option value="Europe/Oslo">Oslo, Norway</option>
+                    <option value="Europe/Copenhagen">Copenhagen, Denmark</option>
+                    <option value="Europe/Helsinki">Helsinki, Finland</option>
+                    <option value="Europe/Dublin">Dublin, Ireland</option>
+                    <option value="Europe/Lisbon">Lisbon, Portugal</option>
+                    <option value="Europe/Athens">Athens, Greece</option>
+                    <option value="Europe/Warsaw">Warsaw, Poland</option>
+                    <option value="Europe/Prague">Prague, Czech Republic</option>
+                    <option value="Europe/Budapest">Budapest, Hungary</option>
+                    <option value="Europe/Bucharest">Bucharest, Romania</option>
+                    <option value="Europe/Istanbul">Istanbul, Turkey</option>
+                    <option value="Europe/Ankara">Ankara, Turkey</option>
+                    <option value="Asia/Tokyo">Tokyo, Japan</option>
+                    <option value="Asia/Yokohama">Yokohama, Japan</option>
+                    <option value="Asia/Osaka">Osaka, Japan</option>
+                    <option value="Asia/Nagoya">Nagoya, Japan</option>
+                    <option value="Asia/Seoul">Seoul, South Korea</option>
+                    <option value="Asia/Shanghai">Shanghai, China</option>
+                    <option value="Asia/Beijing">Beijing, China</option>
+                    <option value="Asia/Hong_Kong">Hong Kong</option>
+                    <option value="Asia/Taipei">Taipei, Taiwan</option>
+                    <option value="Asia/Singapore">Singapore</option>
+                    <option value="Asia/Bangkok">Bangkok, Thailand</option>
+                    <option value="Asia/Ho_Chi_Minh">Ho Chi Minh City, Vietnam</option>
+                    <option value="Asia/Hanoi">Hanoi, Vietnam</option>
+                    <option value="Asia/Jakarta">Jakarta, Indonesia</option>
+                    <option value="Asia/Manila">Manila, Philippines</option>
+                    <option value="Asia/Kuala_Lumpur">Kuala Lumpur, Malaysia</option>
+                    <option value="Asia/Yangon">Yangon, Myanmar</option>
+                    <option value="Australia/Sydney">Sydney, Australia</option>
+                    <option value="Australia/Melbourne">Melbourne, Australia</option>
+                    <option value="Australia/Brisbane">Brisbane, Australia</option>
+                    <option value="Australia/Perth">Perth, Australia</option>
+                    <option value="Pacific/Auckland">Auckland, New Zealand</option>
+                    <option value="Africa/Cairo">Cairo, Egypt</option>
+                    <option value="Africa/Johannesburg">Johannesburg, South Africa</option>
+                    <option value="Africa/Lagos">Lagos, Nigeria</option>
+                    <option value="Africa/Nairobi">Nairobi, Kenya</option>
+                    <option value="Africa/Casablanca">Casablanca, Morocco</option>
+                    <option value="America/Sao_Paulo">Sao Paulo, Brazil</option>
+                    <option value="America/Buenos_Aires">Buenos Aires, Argentina</option>
+                    <option value="America/Bogota">Bogota, Colombia</option>
+                    <option value="America/Lima">Lima, Peru</option>
+                    <option value="America/Santiago">Santiago, Chile</option>
+                </datalist>
+                <button class="add-btn" id="addClockBtn">+</button>
+            </div>
+            <div class="world-clock-grid" id="worldClockGrid"></div>
+        </div>
+
+        <div class="tab-content" id="settings">
+            <div class="setting-item">
+                <label>Alarm Sound</label>
+                <div>
+                    <select id="alarmSoundSelect">
+                        <option value="beep">Beep</option>
+                        <option value="chime">Chime</option>
+                        <option value="bell">Bell</option>
+                        <option value="gentle">Gentle</option>
+                    </select>
+                    <button class="sound-preview-btn" id="previewSoundBtn">▶</button>
+                </div>
+            </div>
+            <div class="setting-item">
+                <label>Reminder Sound</label>
+                <div>
+                    <select id="reminderSoundSelect">
+                        <option value="chime">Chime</option>
+                        <option value="bell">Bell</option>
+                        <option value="gentle">Gentle</option>
+                        <option value="beep">Beep</option>
+                    </select>
+                    <button class="sound-preview-btn" id="previewReminderBtn">▶</button>
+                </div>
+            </div>
+            <div class="setting-item">
+                <label>Volume</label>
+                <input type="range" id="volumeSlider" min="0" max="100" value="70" style="width: 120px;">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        let settings = JSON.parse(localStorage.getItem('todoProSettings')) || { alarmSound: 'beep', reminderSound: 'chime', volume: 0.7 };
+
+        function getAudioContext() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+
+        function playSound(type) {
+            const ctx = getAudioContext();
+            const vol = settings.volume;
+            const sound = type === 'alarm' ? settings.alarmSound : settings.reminderSound;
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            if (sound === 'beep') { oscillator.frequency.value = 800; gainNode.gain.setValueAtTime(vol, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3); oscillator.start(ctx.currentTime); oscillator.stop(ctx.currentTime + 0.3); }
+            else if (sound === 'chime') { oscillator.frequency.value = 523; gainNode.gain.setValueAtTime(vol, ctx.currentTime); oscillator.start(ctx.currentTime); setTimeout(() => { const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain(); osc2.connect(gain2); gain2.connect(ctx.destination); osc2.frequency.value = 659; gain2.gain.setValueAtTime(vol, ctx.currentTime); gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5); osc2.start(ctx.currentTime); osc2.stop(ctx.currentTime + 0.5); }, 200); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5); oscillator.stop(ctx.currentTime + 0.5); }
+            else if (sound === 'bell') { oscillator.frequency.value = 440; oscillator.type = 'sine'; gainNode.gain.setValueAtTime(vol, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1); oscillator.start(ctx.currentTime); oscillator.stop(ctx.currentTime + 1); }
+            else if (sound === 'gentle') { oscillator.frequency.value = 300; oscillator.type = 'sine'; gainNode.gain.setValueAtTime(vol * 0.5, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8); oscillator.start(ctx.currentTime); oscillator.stop(ctx.currentTime + 0.8); }
+        }
+
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabBtns.forEach(btn => { btn.addEventListener('click', () => { tabBtns.forEach(b => b.classList.remove('active')); tabContents.forEach(c => c.classList.remove('active')); btn.classList.add('active'); document.getElementById(btn.dataset.tab).classList.add('active'); }); });
+
+        const taskInput = document.getElementById('taskInput');
+        const addBtn = document.getElementById('addBtn');
+        const taskList = document.getElementById('taskList');
+        let tasks = JSON.parse(localStorage.getItem('todoProTasks')) || [];
+
+        function saveTasks() { localStorage.setItem('todoProTasks', JSON.stringify(tasks)); }
+
+        function renderTasks() {
+            taskList.innerHTML = '';
+            if (tasks.length === 0) { taskList.innerHTML = '<div class="empty-state"><div class="emoji">📝</div><p>No tasks yet!</p></div>'; return; }
+            tasks.forEach((task, index) => { const taskItem = document.createElement('div'); taskItem.className = 'task-item ' + (task.completed ? 'completed' : ''); taskItem.innerHTML = '<div class="checkbox ' + (task.completed ? 'checked' : '') + '" data-index="' + index + '"></div><span class="task-text">' + escapeHtml(task.text) + '</span><button class="delete-btn" data-index="' + index + '">×</button>'; taskList.appendChild(taskItem); });
+        }
+
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function addTask() { const text = taskInput.value.trim(); if (!text) return; tasks.push({ text, completed: false }); saveTasks(); renderTasks(); taskInput.value = ''; taskInput.focus(); }
+
+        addBtn.addEventListener('click', addTask);
+        taskInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
+
+        taskList.addEventListener('click', (e) => { const checkbox = e.target.closest('.checkbox'); const deleteBtn = e.target.closest('.delete-btn'); if (checkbox) { tasks[parseInt(checkbox.dataset.index)].completed = !tasks[parseInt(checkbox.dataset.index)].completed; saveTasks(); renderTasks(); } else if (deleteBtn) { tasks.splice(parseInt(deleteBtn.dataset.index), 1); saveTasks(); renderTasks(); } });
+
+        renderTasks();
+
+        const calendarTitle = document.getElementById('calendarTitle');
+        const calendarGrid = document.getElementById('calendarGrid');
+        let currentDate = new Date();
+        let selectedDate = null;
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const today = new Date();
+            calendarTitle.textContent = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            let html = dayNames.map(d => '<div class="calendar-day-header">' + d + '</div>').join('');
+            for (let i = firstDay - 1; i >= 0; i--) { html += '<div class="calendar-day other-month">' + (daysInPrevMonth - i) + '</div>'; }
+            for (let day = 1; day <= daysInMonth; day++) { const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'); let classes = 'calendar-day'; if (today.getDate() === day && today.getMonth() === month && today.getFullYear() === year) classes += ' today'; if (selectedDate === dateStr) classes += ' selected'; html += '<div class="' + classes + '" data-date="' + dateStr + '">' + day + '</div>'; }
+            calendarGrid.innerHTML = html;
+            calendarGrid.querySelectorAll('.calendar-day:not(.other-month)').forEach(el => { el.addEventListener('click', () => { selectedDate = el.dataset.date; renderCalendar(); }); });
+        }
+
+        document.getElementById('prevMonth').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); });
+        document.getElementById('nextMonth').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); });
+        renderCalendar();
+
+        const reminderInput = document.getElementById('reminderInput');
+        const reminderDate = document.getElementById('reminderDate');
+        const addReminderBtn = document.getElementById('addReminderBtn');
+        const reminderList = document.getElementById('reminderList');
+        let reminders = JSON.parse(localStorage.getItem('todoProReminders')) || [];
+
+        function saveReminders() { localStorage.setItem('todoProReminders', JSON.stringify(reminders)); }
+
+        function renderReminders() {
+            reminderList.innerHTML = '';
+            const sorted = [...reminders].sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (sorted.length === 0) { reminderList.innerHTML = '<div class="empty-state"><div class="emoji">🔔</div><p>No reminders yet!</p></div>'; return; }
+            sorted.forEach((reminder, index) => { const actualIndex = reminders.indexOf(reminder); const dateObj = new Date(reminder.date); const item = document.createElement('div'); item.className = 'reminder-item ' + (reminder.completed ? 'completed' : ''); item.innerHTML = '<div class="checkbox ' + (reminder.completed ? 'checked' : '') + '" data-index="' + actualIndex + '"></div><span class="reminder-text">' + escapeHtml(reminder.text) + '</span><span class="reminder-time">' + dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</span><button class="delete-btn" data-index="' + actualIndex + '">×</button>'; reminderList.appendChild(item); });
+        }
+
+        function addReminder() { const text = reminderInput.value.trim(); const date = reminderDate.value; if (!text || !date) return; reminders.push({ text, date, completed: false, notified: false }); saveReminders(); renderReminders(); reminderInput.value = ''; reminderDate.value = ''; reminderInput.focus(); }
+
+        addReminderBtn.addEventListener('click', addReminder);
+        reminderInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addReminder(); });
+
+        reminderList.addEventListener('click', (e) => { const checkbox = e.target.closest('.checkbox'); const deleteBtn = e.target.closest('.delete-btn'); if (checkbox) { reminders[parseInt(checkbox.dataset.index)].completed = !reminders[parseInt(checkbox.dataset.index)].completed; saveReminders(); renderReminders(); } else if (deleteBtn) { reminders.splice(parseInt(deleteBtn.dataset.index), 1); saveReminders(); renderReminders(); } });
+
+        renderReminders();
+
+        const alarmInput = document.getElementById('alarmInput');
+        const alarmTime = document.getElementById('alarmTime');
+        const addAlarmBtn = document.getElementById('addAlarmBtn');
+        const alarmList = document.getElementById('alarmList');
+        let alarms = JSON.parse(localStorage.getItem('todoProAlarms')) || [];
+
+        function saveAlarms() { localStorage.setItem('todoProAlarms', JSON.stringify(alarms)); }
+
+        function renderAlarms() {
+            alarmList.innerHTML = '';
+            if (alarms.length === 0) { alarmList.innerHTML = '<div class="empty-state"><div class="emoji">⏰</div><p>No alarms yet!</p></div>'; return; }
+            alarms.forEach((alarm, index) => { const timeObj = new Date('2000-01-01T' + alarm.time); const item = document.createElement('div'); item.className = 'alarm-item'; item.innerHTML = '<div class="checkbox ' + (alarm.enabled ? 'checked' : '') + '" data-index="' + index + '"></div><span class="alarm-text">' + (escapeHtml(alarm.label) || 'Alarm') + '</span><span class="alarm-time">' + timeObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</span><div class="alarm-toggle ' + (alarm.enabled ? 'on' : '') + '" data-index="' + index + '"></div><button class="delete-btn" data-index="' + index + '">×</button>'; alarmList.appendChild(item); });
+        }
+
+        function addAlarm() { const label = alarmInput.value.trim(); const time = alarmTime.value; if (!time) return; alarms.push({ label, time, enabled: true }); saveAlarms(); renderAlarms(); alarmInput.value = ''; alarmTime.value = ''; alarmInput.focus(); }
+
+        addAlarmBtn.addEventListener('click', addAlarm);
+        alarmInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addAlarm(); });
+
+        alarmList.addEventListener('click', (e) => { const checkbox = e.target.closest('.checkbox'); const toggle = e.target.closest('.alarm-toggle'); const deleteBtn = e.target.closest('.delete-btn'); if (checkbox) { alarms[parseInt(checkbox.dataset.index)].enabled = !alarms[parseInt(checkbox.dataset.index)].enabled; saveAlarms(); renderAlarms(); } else if (toggle) { alarms[parseInt(toggle.dataset.index)].enabled = !alarms[parseInt(toggle.dataset.index)].enabled; saveAlarms(); renderAlarms(); } else if (deleteBtn) { alarms.splice(parseInt(deleteBtn.dataset.index), 1); saveAlarms(); renderAlarms(); } });
+
+        renderAlarms();
+
+        const timezoneSearch = document.getElementById('timezoneSearch');
+        const addClockBtn = document.getElementById('addClockBtn');
+        const worldClockGrid = document.getElementById('worldClockGrid');
+        let worldClocks = JSON.parse(localStorage.getItem('todoProWorldClocks')) || ['America/New_York', 'Europe/London', 'Asia/Tokyo'];
+
+        function saveWorldClocks() { localStorage.setItem('todoProWorldClocks', JSON.stringify(worldClocks)); }
+
+        function renderWorldClocks() {
+            worldClockGrid.innerHTML = '';
+            worldClocks.forEach((tz, index) => { try { const now = new Date(new Date().toLocaleString('en-US', { timeZone: tz })); const city = tz.split('/').pop().replace(/_/g, ' '); const item = document.createElement('div'); item.className = 'world-clock-item'; item.innerHTML = '<div class="city">' + city + '</div><div class="time">' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) + '</div><div class="date">' + now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</div><button class="delete-btn" data-index="' + index + '" style="position:absolute;top:5px;right:5px;opacity:1;width:24px;height:24px;font-size:14px;">×</button>'; item.style.position = 'relative'; worldClockGrid.appendChild(item); } catch(e) { console.log('Invalid timezone:', tz); } }); }
+
+        addClockBtn.addEventListener('click', () => { const tz = timezoneSearch.value; if (tz && !worldClocks.includes(tz)) { worldClocks.push(tz); saveWorldClocks(); renderWorldClocks(); } timezoneSearch.value = ''; timezoneSearch.focus(); });
+
+        timezoneSearch.addEventListener('keypress', (e) => { if (e.key === 'Enter') { addClockBtn.click(); } });
+
+        worldClockGrid.addEventListener('click', (e) => { if (e.target.classList.contains('delete-btn')) { worldClocks.splice(parseInt(e.target.dataset.index), 1); saveWorldClocks(); renderWorldClocks(); } });
+
+        setInterval(renderWorldClocks, 1000);
+        renderWorldClocks();
+
+        document.getElementById('alarmSoundSelect').value = settings.alarmSound;
+        document.getElementById('reminderSoundSelect').value = settings.reminderSound;
+        document.getElementById('volumeSlider').value = settings.volume * 100;
+
+        document.getElementById('alarmSoundSelect').addEventListener('change', (e) => { settings.alarmSound = e.target.value; localStorage.setItem('todoProSettings', JSON.stringify(settings)); });
+        document.getElementById('reminderSoundSelect').addEventListener('change', (e) => { settings.reminderSound = e.target.value; localStorage.setItem('todoProSettings', JSON.stringify(settings)); });
+        document.getElementById('volumeSlider').addEventListener('input', (e) => { settings.volume = e.target.value / 100; localStorage.setItem('todoProSettings', JSON.stringify(settings)); });
+
+        document.getElementById('previewSoundBtn').addEventListener('click', () => { playSound('alarm'); });
+        document.getElementById('previewReminderBtn').addEventListener('click', () => { playSound('reminder'); });
+
+        function checkAlarmsAndReminders() {
+            const now = new Date();
+            reminders.forEach((reminder, index) => { if (!reminder.notified && !reminder.completed) { const reminderTime = new Date(reminder.date); const diff = reminderTime - now; if (diff <= 0 && diff > -60000) { showNotification(reminder.text, 'reminder'); reminders[index].notified = true; saveReminders(); } } });
+            alarms.forEach((alarm, index) => { if (alarm.enabled && !alarm.snoozed) { const [hours, minutes] = alarm.time.split(':'); const alarmTime = new Date(); alarmTime.setHours(parseInt(hours), parseInt(minutes), 0, 0); if (now.getHours() === alarmTime.getHours() && now.getMinutes() === alarmTime.getMinutes() && now.getSeconds() < 2) { playSound('alarm'); showAlarmNotification(alarm.label || 'Alarm!', index); } } });
+        }
+
+        function showNotification(text, type) { const notif = document.createElement('div'); notif.className = 'notification ' + type; notif.textContent = (type === 'reminder' ? '🔔' : '⏰') + ' ' + text; document.body.appendChild(notif); playSound(type); setTimeout(() => notif.remove(), 6000); }
+
+        function showAlarmNotification(text, index) { const notif = document.createElement('div'); notif.className = 'notification alarm'; notif.innerHTML = '<div>⏰ ' + text + '</div><button class="snooze-btn" onclick="snoozeAlarm(' + index + ')">Snooze 5min</button>'; document.body.appendChild(notif); const closeBtn = document.createElement('button'); closeBtn.textContent = '✕'; closeBtn.style.cssText = 'position:absolute;top:10px;right:10px;background:none;border:none;color:white;font-size:16px;cursor:pointer;'; closeBtn.onclick = () => notif.remove(); notif.style.position = 'relative'; notif.appendChild(closeBtn); }
+
+        window.snoozeAlarm = function(index) { alarms[index].snoozed = true; saveAlarms(); setTimeout(() => { alarms[index].snoozed = false; saveAlarms(); }, 5 * 60 * 1000); document.querySelector('.notification.alarm')?.remove(); };
+
+        setInterval(checkAlarmsAndReminders, 1000);
+    </script>
+</body>
+</html>
